@@ -1,0 +1,157 @@
+
+## Goal
+Build a Python demonstration application for an Airline Irregular Operations (IROP) scenario using CrewAI for agentic reasoning and Apache Iceberg for table storage on Cloudera Data Platform (CDP), showing integration with Snowflake via MCP Server
+
+## Usecase
+The simplified use case: irregular operations (IROP) moment
+t naturally produces a structured trigger (flight status change) and an unstructured signal (a complaint, a rebooking request typed in frustration, or silence)
+
+It's where propensity vs uplift genuinely diverges — a top-tier loyalist will keep flying the airline no matter what you do; an occasional business flier on the fence might need the gesture to not switch carriers next time
+
+It's where a concierge agent has something real to fulfill — passengers don't want a coupon, they want to be rebooked, they want lounge access while they wait, they want their connecting hotel sorted
+
+Two scenarios, same moment
+
+Scenario A — Push (NBA): the airline decides what to do before the passenger asks anything
+
+A connection gets cut from 90 minutes to 40 due to inbound delay. The system has to decide, per passenger on that connection: proactively rebook + notify, offer a lounge pass and let them self-navigate, offer nothing (because it's genuinely fine), or escalate to a human agent. This is where propensity/uplift/bandit logic runs silently in the background before the passenger has even looked at their phone.
+
+Scenario B — Pull (Concierge): the passenger initiates
+
+The same passenger opens the app and types: "my connection just got cut to 40 minutes, can you get me on something else and sort out lounge access while I wait?" Now the concierge agent has to actually reason about feasible alternates, check lounge availability, and compose an answer — using the same passenger context and the same underlying action shelf as Scenario A, but responding to an explicit ask instead of initiating one.
+
+Showing both from the same event is the strongest part of the demo — it proves the architecture isn't two separate systems bolted together, it's one customer-understanding layer serving both directions.
+
+1. Passenger profile
+
+
+
+Loyalty tier (e.g. entry/mid/top), lifetime flights/spend, route history, cabin class typically booked
+
+Stated preferences (aisle/window, meal, lounge usage frequency)
+
+Past disruption history: how many times this passenger has been delayed/rebooked before, and what happened last time (accepted gesture, complained, said nothing)
+
+2. Flight/booking event stream
+
+
+Booking record: PNR, itinerary, connection times, fare class
+
+Operational events: gate change, delay minutes, new connection time, misconnect risk flag
+
+This is what triggers the whole scenario — a single "connection time dropped below threshold" event
+
+3. Unstructured signals
+
+A short customer service chat or in-app message the passenger sends (or doesn't) — this is your Layer 3 input. Write 3–4 tonal variants: calm/matter-of-fact, visibly frustrated, silent (no message at all — silence is itself a signal for elite passengers who "shouldn't have to ask")
+
+4. The action/gesture shelf
+
+Proactive rebooking (with or without notification), lounge pass, meal voucher, miles/points credit, cabin upgrade, hotel + transport (if overnight misconnect), nothing/self-service
+
+5. Historical interaction/outcome log with a holdout slice (for uplift)
+
+This is the one worth hand-crafting carefully, because it's what sells the propensity-vs-uplift moment:
+
+A few top-tier loyalists who rebook and fly again regardless of any gesture (sure things — high propensity to keep flying, ~zero uplift from a gesture)
+
+A few mid-tier or occasional business travelers who are genuinely on the fence — a timely gesture measurably changes whether they rebook with the same airline next time (persuadables — this is where you want the system spending effort)
+
+One passenger type where the gesture actively backfires — e.g. a business traveler who just wants to be rebooked fast, and an apologetic voucher offer reads as the airline not taking the disruption seriously, so it correlates with a worse outcome (sleeping dogs — useful for showing the guardrail agent has teeth)
+
+A high-stakes moment: a delay or missed connection, and one segment of passengers: premium/loyalty travelers on an international itinerary. 
+
+
+## Logical Architectural Flow:
+====================================================================================================
+                                1. EVENT & SIGNAL INGESTION LAYER
+====================================================================================================
+ [Flight Operational Stream: Delay/Connection Cut] ---> Ingests to Iceberg (flight_operational_events)
+ [Mobile App Chat: Passenger Message/Constraints]  ---> Ingests to Iceberg (unstructured_chat_signals)
+                                   |
+                                   v
+====================================================================================================
+                          2. INVERTED DATA & OPERATIONAL CACHE LAYER
+====================================================================================================
+  SNOWFLAKE (Customer Master)                         CLOUDERA DATA LAKEHOUSE (Apache Iceberg)
+  +---------------------------------------+          +--------------------------------------------+
+  | passenger_profiles                    |          | flight_operational_events                  |
+  |  - Loyalty Tier & Lifetime Spend      |  <=====> | unstructured_chat_signals                  |
+  |  - Baseline Retention Propensity      | Zero-Copy| action_gesture_shelf                       |
+  |  - Travel Preferences                 | Access   | historical_uplift_experiments              |
+  +---------------------------------------+          | concierge_inventory_lookup (Live Cache)    |
+                      ^                              | irop_execution_results (Audit Log)         |
+                      |                              +--------------------------------------------+
+               SQL Tool Call                                       ^               ^
+             (Read Profile)                                        |               |
+                      |                                   Read Signals        Tool Calls &
+                      v                                        |               Audit Writes
+===================================================================================|================
+                                3. CREWAI AGENTIC BRAIN (CLOUDERA AI)             |
+===================================================================================|================
+  +----------------------------------+                                             |
+  | 1. Context & Signal Agent        |  -- Reads profile from Snowflake & chat/event from Iceberg.
+  +----------------------------------+
+                  |
+                  v
+  +----------------------------------+
+  | 2. Uplift & Strategy Agent       |  -- Evaluates archetype & generates non-generic plan.
+  +----------------------------------+
+                  |
+                  v
+  +----------------------------------+
+  | 3. Fulfillment & Guardrail Agent |  -- Executes tool call to Iceberg Inventory & writes outcome.
+  +----------------------------------+
+                                   |
+                                   v
+====================================================================================================
+                                4. AUDIT & PRESENTATION LAYER
+====================================================================================================
+  +------------------------------------------+       +--------------------------------------------+
+  | lakehouse.irop_execution_results         |  -->  | Executive Dashboard & Mobile App Stream    |
+  | (Stores decision, reasoning, status)     |       | (Reads execution state from Iceberg)       |
+  +------------------------------------------+       +--------------------------------------------+
+====================================================================================================
+
+## Logical Data Flow:
+Logical Data Flow Sequence
+
+Ingestion Trigger: Flight operational delays and mobile app chat messages are streamed directly into Apache Iceberg tables (flight_operational_events and unstructured_chat_signals).
+
+Context Enrichment: The Context & Signal Agent executes a SQL read against Snowflake to pull passenger_profiles (tier, lifetime spend, baseline propensity) and joins it with the raw chat text in Iceberg to identify constraints (e.g., "Must land < 18:00 local").
+
+Uplift Strategy Evaluation: The Uplift & Strategy Agent compares the passenger's context against historical_uplift_experiments on Iceberg, categorizing the passenger (e.g., Choice-Oriented Executive) and discarding standard apologetic vouchers.
+
+Live Inventory Tool Calling: The Fulfillment & Guardrail Agent makes a direct tool query against concierge_inventory_lookup on Iceberg to confirm seat availability on flight EK372 and Quiet Work Pod #4 in Business Lounge North.
+
+Execution & Audit Writeback: Once inventory is validated, the agent updates the passenger's itinerary and commits the resolution, reasoning summary, and execution status into the Iceberg irop_execution_results table.
+
+UI Rendering: The Executive Dashboard and Mobile App query irop_execution_results on Iceberg to render live updates and explainability logs to operators and travelers.
+
+## Project Requirements
+1. Framework: CrewAI for multi-agent workflows.
+2. Storage: Apache Iceberg for ALL tables (including live inventory lookups) except the Passenger Profiles which are loaded from Snowflake MCP Server
+3. Compute Engine: PySpark connected to Cloudera Spark/Iceberg catalog.
+4. Target Scenarios:
+   - Scenario A (Push / NBA): Proactive disruption detection and archetype classification.
+   - Scenario B (Pull / Concierge): Interactive chat handling David (CUST-404) with unstructured constraints.
+
+## Sample files 
+1. table_creation_code.py - Contains table structure for Iceberg tables. Use table schema here to understand how create Iceberg Tables except Passenger Profiles
+1A. data_insertion.py - Sample data for all iceberg tables. the Passenger data is already available in snowflake through MCP
+2. Iceberg_Pyspark_Quickstart_ADLS.py - Use the code sample here to create a Pyspark connection and run iceberg table schemas for tables ( except Passenger Profiles)
+3. test_crewai_mcp.ipynb - contains the code sample that was tested to hook up to a Snowflake MCP Server and return passenger profiles
+4. crewai_agentic_workflow.py - contains the workflow sample.  You need to change the passenger profiles agent to fetch passenger records from Snowflake ( and not from Iceberg)
+
+
+
+
+## Data Placement Topology
+Data Domain,Target Platform,Storage Format,Operational Role in Demo
+passenger_profiles,Snowflake,Native Snowflake / Iceberg,"Holds tier data, lifetime spend, baseline propensity, and customer master profile."
+flight_operational_events,Cloudera Data Lakehouse,Apache Iceberg,Real-time flight status stream and misconnect risk flags.
+unstructured_chat_signals,Cloudera Data Lakehouse,Apache Iceberg,"Customer chat messages, app transcripts, and sentiment classifications."
+action_gesture_shelf,Cloudera Data Lakehouse,Apache Iceberg,"Master catalog of vouchers, upgrades, and business rules."
+historical_uplift_experiments,Cloudera Data Lakehouse,Apache Iceberg,"Causal uplift model training log (Sure Thing, Persuadable, Sleeping Dog)."
+concierge_inventory_lookup,Cloudera Data Lakehouse,Apache Iceberg,"Live operational lookup table for seat availability, lounge pods, and hotel space."
+irop_execution_results,Cloudera Data Lakehouse,Apache Iceberg,Real-time agent execution log and UI dashboard feed.

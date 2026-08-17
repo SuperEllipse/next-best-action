@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Executive Dashboard — IROP Demo{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>Executive Dashboard</h1>
+  <p>Proactive IROP decisions powered by CrewAI, Iceberg, and Snowflake MCP</p>
+</section>
+
+<section class="controls">
+  <button id="btn-scenario-a" class="btn btn-primary">Run Scenario A (Push / NBA)</button>
+  <button id="btn-scenario-b" class="btn btn-secondary">Run Scenario B (Pull / Concierge)</button>
+  <button id="btn-refresh" class="btn">Refresh Results</button>
+  <span id="status-msg" class="status-msg"></span>
+</section>
+
+<section class="grid-2">
+  <div class="card">
+    <h2>Archetype Comparison</h2>
+    <p class="hint">Profiles fetched live from Snowflake MCP</p>
+    <div id="archetype-panels" class="archetype-grid"></div>
+  </div>
+  <div class="card">
+    <h2>Operational Events</h2>
+    <div id="events-panel" class="scroll-panel"></div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Agent Execution Audit Log</h2>
+  <div id="audit-log" class="scroll-panel"></div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const DEMO_PASSENGERS = {{ passengers | tojson }};
+  initExecutive(DEMO_PASSENGERS);
+</script>
+{% endblock %}

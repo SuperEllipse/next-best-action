@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Concierge — David (CUST-404){% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>Passenger Concierge</h1>
+  <p>Scenario B — Pull: David ({{ customer_id }}) initiates contact</p>
+</section>
+
+<section class="grid-2">
+  <div class="card">
+    <h2>Chat</h2>
+    <div id="chat-window" class="chat-window">
+      <div class="chat-msg passenger">
+        My connection just got cut to 40 minutes, can you get me on something else and sort out lounge access while I wait?
+      </div>
+    </div>
+    <button id="btn-run-concierge" class="btn btn-primary">Run Concierge Agent</button>
+  </div>
+  <div class="card">
+    <h2>Passenger Profile <span class="badge">Snowflake MCP</span></h2>
+    <div id="profile-panel" class="profile-panel">Loading profile via MCP...</div>
+    <h3>Latest Agent Response</h3>
+    <div id="agent-response" class="agent-response">Click "Run Concierge Agent" to start.</div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  initConcierge("{{ customer_id }}");
+</script>
+{% endblock %}
