@@ -3,14 +3,14 @@
 import os
 import sys
 
-# Project root on path + load .env for Snowflake/OpenAI keys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from env_config import load_project_env
+from env_config import get_env_status, load_project_env
 
 load_project_env()
 
 from flask import Flask, jsonify, render_template, request
 
+from choice_oriented_passenger import DEFAULT_PUSH_PROMPT, DEFAULT_SCRIPTED_CHAT
 from dashboard.services.iceberg_service import (
     fetch_affected_passengers,
     fetch_execution_results,
@@ -18,11 +18,29 @@ from dashboard.services.iceberg_service import (
     fetch_uplift_by_customer,
 )
 from dashboard.services.mcp_service import DEMO_PASSENGERS, check_mcp_health, get_passenger_profile
-from dashboard.services.scenario_service import trigger_scenario_a, trigger_scenario_b
+from dashboard.services.scenario_service import (
+    get_executive_stats,
+    get_rules_contrast,
+    trigger_scenario_a,
+    trigger_scenario_b,
+)
+
+
+def _static_version() -> str:
+    static_dir = os.path.join(os.path.dirname(__file__), "static", "js")
+    app_js = os.path.join(static_dir, "app.js")
+    try:
+        return str(int(os.path.getmtime(app_js)))
+    except OSError:
+        return "1"
 
 
 def create_app() -> Flask:
     app = Flask(__name__)
+
+    @app.context_processor
+    def inject_static_version():
+        return {"static_version": _static_version()}
 
     @app.route("/")
     @app.route("/executive")
@@ -30,20 +48,57 @@ def create_app() -> Flask:
         return render_template(
             "executive.html",
             passengers=DEMO_PASSENGERS,
+            customer_id="CUST-404",
+            push_prompt=DEFAULT_PUSH_PROMPT,
+            scripted_chat=DEFAULT_SCRIPTED_CHAT,
         )
 
     @app.route("/concierge")
     def concierge():
-        return render_template("concierge.html", customer_id="CUST-404", pnr="PNR-404D")
+        return render_template(
+            "concierge.html",
+            customer_id="CUST-404",
+            pnr="PNR-404D",
+            push_prompt=DEFAULT_PUSH_PROMPT,
+            scripted_chat=DEFAULT_SCRIPTED_CHAT,
+        )
 
     @app.route("/api/health")
     def health():
-        return jsonify({"flask": "ok", "mcp": check_mcp_health()})
+        env_status = get_env_status()
+        mcp = check_mcp_health()
+        return jsonify({
+            "flask": "ok",
+            "mcp": mcp,
+            "env": env_status,
+            "ready_for_scenarios": env_status["openai_api_key_set"] and env_status["snowflake_pat_set"],
+        })
 
     @app.route("/api/execution-results")
     def api_execution_results():
-        limit = request.args.get("limit", 50, type=int)
-        return jsonify(fetch_execution_results(limit))
+        limit = request.args.get("limit", 100, type=int)
+        window = request.args.get("window", "1d")
+        scenario = request.args.get("scenario")
+        category = request.args.get("filter", request.args.get("category", "all"))
+        since = request.args.get("since")
+        return jsonify(
+            fetch_execution_results(
+                limit=limit,
+                window=window,
+                scenario=scenario or None,
+                category=category,
+                since=since,
+            )
+        )
+
+    @app.route("/api/execution-stats")
+    def api_execution_stats():
+        window = request.args.get("window", "1d")
+        return jsonify(get_executive_stats(window=window))
+
+    @app.route("/api/rules-contrast")
+    def api_rules_contrast():
+        return jsonify(get_rules_contrast())
 
     @app.route("/api/operational-events")
     def api_operational_events():
@@ -65,14 +120,22 @@ def create_app() -> Flask:
     @app.route("/api/scenario-a", methods=["POST"])
     def api_scenario_a():
         try:
-            return jsonify(trigger_scenario_a())
+            verbose = request.json.get("verbose", False) if request.is_json else False
+            return jsonify(trigger_scenario_a(verbose=verbose))
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500
 
     @app.route("/api/scenario-b", methods=["POST"])
     def api_scenario_b():
         try:
-            return jsonify(trigger_scenario_b())
+            body = request.get_json(silent=True) or {}
+            return jsonify(
+                trigger_scenario_b(
+                    verbose=body.get("verbose", False),
+                    chat_message=body.get("chat_message"),
+                    chat_history=body.get("chat_history"),
+                )
+            )
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500
 
@@ -80,7 +143,6 @@ def create_app() -> Flask:
 
 
 def get_app_server_config() -> tuple[str, int]:
-    """Cloudera AI embedded web apps must bind to CDSW_APP_PORT on 127.0.0.1."""
     port = int(os.environ["CDSW_APP_PORT"])
     return "127.0.0.1", port
 

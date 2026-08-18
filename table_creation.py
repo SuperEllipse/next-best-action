@@ -43,13 +43,21 @@ TABLES = {
         pnr STRING,
         alternate_flight STRING,
         departure_time TIMESTAMP,
+        arrival_time TIMESTAMP,
         seats_available INT,
         lounge_available BOOLEAN,
         inventory_status STRING,
-        overnight_required BOOLEAN
+        overnight_required BOOLEAN,
+        destination STRING,
+        hold_status STRING,
+        hold_expires_at TIMESTAMP,
+        amenity_type STRING,
+        amenity_id STRING,
+        amenity_status STRING
     """,
     "irop_execution_results": """
         exec_id STRING,
+        case_id STRING,
         pnr STRING,
         customer_id STRING,
         scenario STRING,

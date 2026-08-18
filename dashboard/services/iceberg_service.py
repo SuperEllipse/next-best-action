@@ -1,13 +1,28 @@
 """Iceberg data access for Flask dashboard."""
 
-from iceberg_tools import get_execution_results, get_passengers_for_event
+from iceberg_tools import (
+    get_execution_results_filtered,
+    get_passengers_for_event,
+)
 from spark_session import ICEBERG_NAMESPACE, collect_as_dicts, get_spark_session
 
 NS = ICEBERG_NAMESPACE
 
 
-def fetch_execution_results(limit: int = 50) -> list:
-    return get_execution_results(limit)
+def fetch_execution_results(
+    limit: int = 100,
+    window: str = "1d",
+    scenario: str | None = None,
+    category: str = "all",
+    since: str | None = None,
+) -> list:
+    return get_execution_results_filtered(
+        window=window,
+        scenario=scenario,
+        category=category,
+        since=since,
+        limit=limit,
+    )
 
 
 def fetch_operational_events() -> list:

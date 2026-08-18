@@ -1,40 +1,301 @@
 {% extends "base.html" %}
-{% block title %}Executive Dashboard — IROP Demo{% endblock %}
+{% block title %}Airline Operations & NBA Demo{% endblock %}
 
 {% block content %}
-<section class="hero">
-  <h1>Executive Dashboard</h1>
-  <p>Proactive IROP decisions powered by CrewAI, Iceberg, and Snowflake MCP</p>
+<section class="hero hero-compact">
+  <h1>Airline Operations and Next Best Action Demo</h1>
+  <p>Proactive IROP decisions powered by CrewAI on Cloudera AI, Apache Iceberg, and Snowflake MCP</p>
 </section>
 
-<section class="controls">
-  <button id="btn-scenario-a" class="btn btn-primary">Run Scenario A (Push / NBA)</button>
-  <button id="btn-scenario-b" class="btn btn-secondary">Run Scenario B (Pull / Concierge)</button>
-  <button id="btn-refresh" class="btn">Refresh Results</button>
-  <span id="status-msg" class="status-msg"></span>
-</section>
+<div id="loading-bar" class="loading-bar" aria-hidden="true">
+  <div class="loading-bar-fill"></div>
+</div>
 
-<section class="grid-2">
+<div class="tab-bar" role="tablist">
+  <button class="tab active" role="tab" data-tab="overview" aria-selected="true">Overview</button>
+  <button class="tab" role="tab" data-tab="executive" aria-selected="false">Executive Dashboard</button>
+  <button class="tab" role="tab" data-tab="segments" aria-selected="false">Missed Connection Segments</button>
+  <button class="tab" role="tab" data-tab="scenario1" aria-selected="false">Scenario 1 — Push / NBA</button>
+  <button class="tab" role="tab" data-tab="scenario2" aria-selected="false">Scenario 2 — Concierge</button>
+  <button class="tab" role="tab" data-tab="comparison" aria-selected="false">Rules vs Agentic</button>
+</div>
+
+<span id="status-msg" class="status-msg tab-status"></span>
+
+<!-- Tab 0: Overview (static) -->
+<section id="tab-overview" class="tab-panel active" role="tabpanel">
   <div class="card">
-    <h2>Archetype Comparison</h2>
-    <p class="hint">Profiles fetched live from Snowflake MCP</p>
+    <h2>Architecture &amp; Workflow</h2>
+    <p class="hint">How Cloudera AI and Snowflake work together to resolve irregular operations (IROP) with explainable, agentic decisions.</p>
+
+    <div class="arch-diagram" aria-label="Architecture diagram">
+      <div class="arch-row arch-sources">
+        <div class="arch-node arch-snowflake">
+          <span class="arch-platform">Snowflake</span>
+          <strong>Passenger Profiles</strong>
+          <span class="arch-detail">Loyalty tier, preferences, contact history</span>
+          <span class="arch-badge">MCP Server</span>
+        </div>
+        <div class="arch-node arch-cloudera">
+          <span class="arch-platform">Cloudera AI</span>
+          <strong>Apache Iceberg</strong>
+          <span class="arch-detail">Flights, inventory, uplift models, audit log</span>
+          <span class="arch-badge">Operational Lakehouse</span>
+        </div>
+      </div>
+
+      <div class="arch-connector arch-connector-down">
+        <span class="arch-arrow">▼</span>
+        <span class="arch-flow-label">Disruption detected · context assembled</span>
+      </div>
+
+      <div class="arch-row arch-center">
+        <div class="arch-node arch-crewai">
+          <span class="arch-platform">Cloudera AI</span>
+          <strong>CrewAI Orchestrator</strong>
+          <span class="arch-detail">3-agent sequential workflow · OpenAI LLM</span>
+        </div>
+      </div>
+
+      <div class="arch-connector arch-connector-fan">
+        <div class="arch-fan-line"></div>
+      </div>
+
+      <div class="arch-row arch-agents">
+        <div class="arch-agent-card">
+          <span class="arch-agent-num">1</span>
+          <strong>Context &amp; Signal</strong>
+          <span class="arch-detail">Snowflake profile + Iceberg events &amp; chat</span>
+        </div>
+        <div class="arch-agent-card">
+          <span class="arch-agent-num">2</span>
+          <strong>Uplift &amp; Strategy</strong>
+          <span class="arch-detail">Archetype classification · action shelf</span>
+        </div>
+        <div class="arch-agent-card">
+          <span class="arch-agent-num">3</span>
+          <strong>Fulfillment &amp; Guardrails</strong>
+          <span class="arch-detail">Inventory check · execute · audit write</span>
+        </div>
+      </div>
+
+      <div class="arch-connector arch-connector-down">
+        <span class="arch-arrow">▼</span>
+        <span class="arch-flow-label">Decision logged · passenger notified</span>
+      </div>
+
+      <div class="arch-row arch-center">
+        <div class="arch-node arch-dashboard">
+          <span class="arch-platform">Cloudera AI</span>
+          <strong>Flask Dashboard</strong>
+          <span class="arch-detail">Executive metrics · scenarios · explainability</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-legend">
+      <span><span class="legend-dot legend-snowflake"></span> Snowflake — customer intelligence via MCP</span>
+      <span><span class="legend-dot legend-cloudera"></span> Cloudera — compute, Iceberg, and demo UI</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>The 3 Agents</h2>
+    <p class="hint">Each agent has a focused role, dedicated tools, and produces an explainable step in the brain log.</p>
+    <div class="agent-cards">
+      <article class="agent-card">
+        <div class="agent-card-header">
+          <span class="agent-card-num">Agent 1</span>
+          <h3>Context &amp; Signal Agent</h3>
+        </div>
+        <p>Enriches the passenger picture by combining the <strong>Snowflake MCP profile</strong> with live <strong>Iceberg operational signals</strong> — flight delays, connection risk, and chat constraints (e.g., must land before 6 PM).</p>
+        <p class="agent-tools"><span class="badge">Iceberg</span> fetch_operational_context</p>
+      </article>
+      <article class="agent-card">
+        <div class="agent-card-header">
+          <span class="agent-card-num">Agent 2</span>
+          <h3>Uplift &amp; Strategy Agent</h3>
+        </div>
+        <p>Classifies the passenger archetype (Sure Thing, Persuadable, Sleeping Dog, Choice-Oriented) using uplift history, then recommends the optimal gesture from the action shelf — auto-rebook, hold-and-prompt, lounge access, or concierge handoff.</p>
+        <p class="agent-tools"><span class="badge">Iceberg</span> query_uplift_and_actions</p>
+      </article>
+      <article class="agent-card">
+        <div class="agent-card-header">
+          <span class="agent-card-num">Agent 3</span>
+          <h3>Fulfillment &amp; Guardrail Agent</h3>
+        </div>
+        <p>Validates inventory, blocks backfiring actions (e.g., vouchers for Sleeping Dogs), confirms rebooks or holds, and writes the final decision to the <strong>Iceberg audit table</strong> for executive reporting.</p>
+        <p class="agent-tools"><span class="badge">Iceberg</span> query_inventory · log_execution_result</p>
+      </article>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>How to Run the Demo</h2>
+    <p class="hint">Use the tabs above to walk through each part of the story. Recommended order for a live presentation:</p>
+    <ol class="demo-steps">
+      <li class="demo-step">
+        <div class="demo-step-body">
+          <h3>Executive Dashboard</h3>
+          <p>View aggregated execution status from past workflow runs stored in Iceberg. Filter by time window, click metrics to drill into individual audit records.</p>
+          <span class="demo-step-tag">Read-only · historical</span>
+        </div>
+        <button type="button" class="btn btn-secondary demo-goto" data-goto-tab="executive">Open tab →</button>
+      </li>
+      <li class="demo-step">
+        <div class="demo-step-body">
+          <h3>Scenario 1 — Next Best Action (Auto)</h3>
+          <p>Proactive push workflow: the 3-agent crew processes all four passengers with missed connections. Each segment gets a tailored action — auto-rebook, gesture, or hold-and-prompt for David (CUST-404).</p>
+          <span class="demo-step-tag">Click Run Scenario 1</span>
+        </div>
+        <button type="button" class="btn btn-secondary demo-goto" data-goto-tab="scenario1">Open tab →</button>
+      </li>
+      <li class="demo-step">
+        <div class="demo-step-body">
+          <h3>Scenario 2 — Human-in-the-Loop Concierge</h3>
+          <p>David initiates a multi-turn chat. The same agentic crew re-reads history, re-holds inventory, and executes his preference (e.g., later flight + lounge) with full brain-log explainability.</p>
+          <span class="demo-step-tag">Run Scenario 1 first · then chat</span>
+        </div>
+        <button type="button" class="btn btn-secondary demo-goto" data-goto-tab="scenario2">Open tab →</button>
+      </li>
+      <li class="demo-step">
+        <div class="demo-step-body">
+          <h3>Rules Engine vs Agentic Flow</h3>
+          <p>Side-by-side contrast for David Vance — why rigid if/then rules miss nuance while the agentic workflow respects constraints, uplift, and inventory in one explainable pass.</p>
+          <span class="demo-step-tag">Executive talk track</span>
+        </div>
+        <button type="button" class="btn btn-secondary demo-goto" data-goto-tab="comparison">Open tab →</button>
+      </li>
+    </ol>
+    <div class="demo-cli card-inner">
+      <h3>CLI (optional)</h3>
+      <pre class="cli-block"><code>python run_demo.py setup        # create Iceberg tables + seed
+python run_demo.py scenario-a   # Scenario 1 — push / NBA
+python run_demo.py scenario-b   # Scenario 2 — concierge chat
+python run_demo.py dashboard    # start this UI</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- Tab 1: Executive Dashboard -->
+<section id="tab-executive" class="tab-panel" role="tabpanel" hidden>
+  <div class="card" id="ops-overview">
+    <div class="overview-header">
+      <h2>Operations Overview</h2>
+      <div class="timeframe-bar" role="group" aria-label="Time frame">
+        <button class="timeframe-btn" data-window="1h">1 hour</button>
+        <button class="timeframe-btn" data-window="4h">4 hours</button>
+        <button class="timeframe-btn active" data-window="1d">1 day</button>
+        <button class="timeframe-btn" data-window="1w">1 week</button>
+      </div>
+    </div>
+    <p class="hint" id="overview-hint">Aggregated agent actions from Iceberg for the selected time frame. Click a metric to drill down.</p>
+    <div id="stats-panel" class="stats-grid"></div>
+    <div class="detail-header">
+      <h3 id="detail-title">Operation Details</h3>
+      <span id="detail-count" class="detail-count"></span>
+    </div>
+    <div id="detail-panel" class="scroll-panel detail-panel">
+      <p class="hint">Select a metric above to view matching records.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Tab 2: Segments -->
+<section id="tab-segments" class="tab-panel" role="tabpanel" hidden>
+  <div class="card">
+    <h2>Active Disruption</h2>
+    <p class="hint">Passengers with misconnect risk after inbound delay — operational context from Iceberg</p>
+    <div id="events-panel" class="events-grid"></div>
+  </div>
+  <div class="card">
+    <h2>Passenger Segments</h2>
+    <p class="hint">Profiles from Snowflake MCP · uplift segment and recommended action from Iceberg</p>
     <div id="archetype-panels" class="archetype-grid"></div>
   </div>
+</section>
+
+<!-- Tab 3: Scenario 1 -->
+<section id="tab-scenario1" class="tab-panel" role="tabpanel" hidden>
   <div class="card">
-    <h2>Operational Events</h2>
-    <div id="events-panel" class="scroll-panel"></div>
+    <h2>Scenario 1 — Proactive Push / NBA</h2>
+    <p class="hint">Agentic workflow processes all passengers with missed connections. Each segment receives a tailored action — auto-rebook, gesture, or hold-and-prompt.</p>
+    <div class="controls controls-inline">
+      <button id="btn-scenario-a" class="btn btn-primary">Run Scenario 1 (Push / NBA)</button>
+      <button id="btn-clear-a" class="btn">Clear &amp; Rerun</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Scenario 1 Audit Log</h2>
+    <p class="hint" id="audit-hint-a">Run Scenario 1 to see results from this session only.</p>
+    <div id="audit-log-a" class="scroll-panel">
+      <p class="hint">No results yet — click Run Scenario 1 above.</p>
+    </div>
   </div>
 </section>
 
-<section class="card">
-  <h2>Agent Execution Audit Log</h2>
-  <div id="audit-log" class="scroll-panel"></div>
+<!-- Tab 4: Scenario 2 -->
+<section id="tab-scenario2" class="tab-panel" role="tabpanel" hidden>
+  <div class="card">
+    <h2>Scenario 2 — Concierge for High-Value Passengers</h2>
+    <p class="hint">David Vance (CUST-404) — choice-oriented segment. Scenario 1 stages options; this chat executes his preference with full explainability.</p>
+    <div class="controls controls-inline">
+      <button id="btn-clear-b" class="btn">Clear &amp; Rerun</button>
+    </div>
+  </div>
+  <section class="grid-2 concierge-split">
+    <div class="card">
+      <h2>Passenger Chat</h2>
+      <div id="chat-window" class="chat-window">
+        <div class="chat-msg push">
+          <span class="chat-label">Push from Scenario 1</span>
+          {{ push_prompt }}
+        </div>
+      </div>
+      <form id="concierge-chat-form" class="concierge-form" action="#" method="post">
+        <label class="chat-input-label" for="freeform-chat">Your message</label>
+        <textarea id="freeform-chat" class="chat-input" rows="3" placeholder="First turn defaults to the scripted dinner constraint message if left blank. Follow-up turns: type here (e.g. dinner cancelled, prefer later flight + lounge rest)."></textarea>
+        <p class="hint chat-input-hint">Enter to send · Shift+Enter for a new line</p>
+        <div class="controls-inline">
+          <button type="submit" id="btn-scenario-b" class="btn btn-primary">Run Scenario 2 (Concierge Chat)</button>
+        </div>
+      </form>
+      <p class="hint">Run Scenario 1 first, or Scenario 2 will stage options for CUST-404 automatically.</p>
+    </div>
+    <div class="card">
+      <h2>Agent Brain Log <span class="badge">Explainability</span></h2>
+      <div id="brain-log" class="brain-log">
+        <p class="hint">Run Scenario 2 to populate the reasoning trace.</p>
+      </div>
+      <h3>Concierge Response</h3>
+      <div id="agent-response" class="agent-response">Waiting for agent...</div>
+    </div>
+  </section>
+  <div class="card">
+    <h2>Scenario 2 Audit Log</h2>
+    <p class="hint" id="audit-hint-b">Run Scenario 2 to see results from this session only.</p>
+    <div id="audit-log-b" class="scroll-panel">
+      <p class="hint">No results yet — click Run Scenario 2 above.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Tab 5: Comparison -->
+<section id="tab-comparison" class="tab-panel" role="tabpanel" hidden>
+  <div class="card">
+    <h2>Rules Engine vs Agentic Workflow</h2>
+    <p class="hint">Side-by-side contrast for David Vance (CUST-404) — executive talk track</p>
+    <div id="contrast-panel" class="contrast-grid">
+      <div class="contrast-card rules skeleton-card"><p class="hint">Loading contrast…</p></div>
+      <div class="contrast-card agentic skeleton-card"><p class="hint">Loading contrast…</p></div>
+    </div>
+  </div>
 </section>
 {% endblock %}
 
 {% block scripts %}
 <script>
   const DEMO_PASSENGERS = {{ passengers | tojson }};
-  initExecutive(DEMO_PASSENGERS);
+  initExecutive(DEMO_PASSENGERS, "{{ customer_id }}", {{ scripted_chat | tojson }});
 </script>
 {% endblock %}

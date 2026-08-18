@@ -12,6 +12,24 @@ from env_config import load_project_env, print_env_status
 load_project_env()
 
 
+def _print_scenario_result(customer_id: str, data: dict) -> None:
+    scenario = data.get("scenario", "")
+    header = f"\n--- {customer_id}" + (f" [{scenario}]" if scenario else "") + " ---"
+    print(header)
+    if data.get("push_prompt"):
+        print(f"Push: {data['push_prompt']}")
+    if data.get("concierge_reply"):
+        print(f"Concierge: {data['concierge_reply']}")
+    if data.get("chosen_flight"):
+        print(f"Flight: {data['chosen_flight']}")
+    if data.get("result"):
+        print(data["result"])
+    if data.get("brain_log"):
+        print("\nAgent Brain Log:")
+        for step in data["brain_log"]:
+            print(f"  [{step.get('phase')}] {step.get('detail', '')[:200]}")
+
+
 def setup_data():
     from spark_session import verify_iceberg_runtime
     from table_creation import create_tables
@@ -27,23 +45,24 @@ def setup_data():
 
 
 def run_scenarios(verbose: bool = True):
-    from scenarios import run_scenario_a_push, run_scenario_b_pull
+    from scenarios import run_scenario_a, run_scenario_b
 
     print_env_status()
     print("\n=== Scenario A: Push / NBA ===")
-    results_a = run_scenario_a_push(verbose=verbose)
+    results_a = run_scenario_a(verbose=verbose)
     for cid, data in results_a.items():
-        print(f"\n--- {cid} ---\n{data['result']}")
+        _print_scenario_result(cid, data)
 
     print("\n=== Scenario B: Pull / Concierge (David) ===")
-    results_b = run_scenario_b_pull(verbose=verbose)
+    results_b = run_scenario_b(verbose=verbose)
     for cid, data in results_b.items():
-        print(f"\n--- {cid} ---\n{data['result']}")
+        _print_scenario_result(cid, data)
 
 
 def launch_dashboard():
     from dashboard.app import get_app_server_config, run_server
 
+    print_env_status()
     host, port = get_app_server_config()
     print(f"=== Launching Flask dashboard on {host}:{port} (CDSW_APP_PORT) ===")
     print("Access via the grid icon in the Cloudera AI session toolbar.")
@@ -75,19 +94,19 @@ def main():
         from test_iceberg_insert import main as test_insert
         test_insert()
     elif args.command == "scenario-a":
-        from scenarios import run_scenario_a_push
+        from scenarios import run_scenario_a
         print_env_status()
         print("\n=== Scenario A: Push / NBA ===")
-        results_a = run_scenario_a_push(verbose=verbose)
+        results_a = run_scenario_a(verbose=verbose)
         for cid, data in results_a.items():
-            print(f"\n--- {cid} ---\n{data['result']}")
+            _print_scenario_result(cid, data)
     elif args.command == "scenario-b":
-        from scenarios import run_scenario_b_pull
+        from scenarios import run_scenario_b
         print_env_status()
         print("\n=== Scenario B: Pull / Concierge (David) ===")
-        results_b = run_scenario_b_pull(verbose=verbose)
+        results_b = run_scenario_b(verbose=verbose)
         for cid, data in results_b.items():
-            print(f"\n--- {cid} ---\n{data['result']}")
+            _print_scenario_result(cid, data)
     elif args.command == "scenarios":
         run_scenarios(verbose=verbose)
     elif args.command == "dashboard":
