@@ -1,0 +1,2 @@
+# Keep the pre-built wheel for Agent Studio read-only /workflow_data mounts.
+*.tar.gz

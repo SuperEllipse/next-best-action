@@ -15,8 +15,8 @@
   <button class="tab active" role="tab" data-tab="overview" aria-selected="true">Overview</button>
   <button class="tab" role="tab" data-tab="executive" aria-selected="false">Executive Dashboard</button>
   <button class="tab" role="tab" data-tab="segments" aria-selected="false">Missed Connection Segments</button>
-  <button class="tab" role="tab" data-tab="scenario-a" aria-selected="false">scenario-a — Push / NBA</button>
-  <button class="tab" role="tab" data-tab="scenario-b" aria-selected="false">scenario-b — Concierge</button>
+  <button class="tab" role="tab" data-tab="scenario1" aria-selected="false">Scenario 1 — Push / NBA</button>
+  <button class="tab" role="tab" data-tab="scenario2" aria-selected="false">Scenario 2 — Concierge</button>
   <button class="tab" role="tab" data-tab="comparison" aria-selected="false">Rules vs Agentic</button>
 </div>
 
@@ -144,19 +144,19 @@
       </li>
       <li class="demo-step">
         <div class="demo-step-body">
-          <h3>scenario-a — Next Best Action (Auto)</h3>
+          <h3>Scenario 1 — Next Best Action (Auto)</h3>
           <p>Proactive push workflow: the 3-agent crew processes all four passengers with missed connections. Each segment gets a tailored action — auto-rebook, gesture, or hold-and-prompt for David (CUST-404).</p>
-          <span class="demo-step-tag">Click Run scenario-a</span>
+          <span class="demo-step-tag">Click Run Scenario 1</span>
         </div>
-        <button type="button" class="btn btn-secondary demo-goto" data-goto-tab="scenario-a">Open tab →</button>
+        <button type="button" class="btn btn-secondary demo-goto" data-goto-tab="scenario1">Open tab →</button>
       </li>
       <li class="demo-step">
         <div class="demo-step-body">
-          <h3>scenario-b — Human-in-the-Loop Concierge</h3>
+          <h3>Scenario 2 — Human-in-the-Loop Concierge</h3>
           <p>David initiates a multi-turn chat. The same agentic crew re-reads history, re-holds inventory, and executes his preference (e.g., later flight + lounge) with full brain-log explainability.</p>
-          <span class="demo-step-tag">Run scenario-a first · then chat</span>
+          <span class="demo-step-tag">Run Scenario 1 first · then chat</span>
         </div>
-        <button type="button" class="btn btn-secondary demo-goto" data-goto-tab="scenario-b">Open tab →</button>
+        <button type="button" class="btn btn-secondary demo-goto" data-goto-tab="scenario2">Open tab →</button>
       </li>
       <li class="demo-step">
         <div class="demo-step-body">
@@ -168,16 +168,11 @@
       </li>
     </ol>
     <div class="demo-cli card-inner">
-      <h3>Run order</h3>
-      <pre class="cli-block"><code># 1. Offline (workbench session) — run once before the Application:
-python3 run_demo.py setup
-
-# 2. Cloudera AI Application — set Command to:
-python3 run_demo.py
-
-# 3. Optional scenarios (workbench session or from this UI):
-python3 run_demo.py scenario-a
-python3 run_demo.py scenario-b</code></pre>
+      <h3>CLI (optional)</h3>
+      <pre class="cli-block"><code>python run_demo.py setup        # create Iceberg tables + seed
+python run_demo.py scenario-a   # Scenario 1 — push / NBA
+python run_demo.py scenario-b   # Scenario 2 — concierge chat
+python run_demo.py dashboard    # start this UI</code></pre>
     </div>
   </div>
 </section>
@@ -220,30 +215,30 @@ python3 run_demo.py scenario-b</code></pre>
   </div>
 </section>
 
-<!-- Tab 3: scenario-a -->
-<section id="tab-scenario-a" class="tab-panel" role="tabpanel" hidden>
+<!-- Tab 3: Scenario 1 -->
+<section id="tab-scenario1" class="tab-panel" role="tabpanel" hidden>
   <div class="card">
-    <h2>scenario-a — Proactive Push / NBA</h2>
+    <h2>Scenario 1 — Proactive Push / NBA</h2>
     <p class="hint">Agentic workflow processes all passengers with missed connections. Each segment receives a tailored action — auto-rebook, gesture, or hold-and-prompt.</p>
     <div class="controls controls-inline">
-      <button id="btn-scenario-a" class="btn btn-primary">Run scenario-a (Push / NBA)</button>
+      <button id="btn-scenario-a" class="btn btn-primary">Run Scenario 1 (Push / NBA)</button>
       <button id="btn-clear-a" class="btn">Clear &amp; Rerun</button>
     </div>
   </div>
   <div class="card">
-    <h2>scenario-a Audit Log</h2>
-    <p class="hint" id="audit-hint-a">Run scenario-a to see results from this session only.</p>
+    <h2>Scenario 1 Audit Log</h2>
+    <p class="hint" id="audit-hint-a">Run Scenario 1 to see results from this session only.</p>
     <div id="audit-log-a" class="scroll-panel">
-      <p class="hint">No results yet — click Run scenario-a above.</p>
+      <p class="hint">No results yet — click Run Scenario 1 above.</p>
     </div>
   </div>
 </section>
 
-<!-- Tab 4: scenario-b -->
-<section id="tab-scenario-b" class="tab-panel" role="tabpanel" hidden>
+<!-- Tab 4: Scenario 2 -->
+<section id="tab-scenario2" class="tab-panel" role="tabpanel" hidden>
   <div class="card">
-    <h2>scenario-b — Concierge for High-Value Passengers</h2>
-    <p class="hint">David Vance (CUST-404) — choice-oriented segment. scenario-a stages options; this chat executes his preference with full explainability.</p>
+    <h2>Scenario 2 — Concierge for High-Value Passengers</h2>
+    <p class="hint">David Vance (CUST-404) — choice-oriented segment. Scenario 1 stages options; this chat executes his preference with full explainability.</p>
     <div class="controls controls-inline">
       <button id="btn-clear-b" class="btn">Clear &amp; Rerun</button>
     </div>
@@ -253,7 +248,7 @@ python3 run_demo.py scenario-b</code></pre>
       <h2>Passenger Chat</h2>
       <div id="chat-window" class="chat-window">
         <div class="chat-msg push">
-          <span class="chat-label">Push from scenario-a</span>
+          <span class="chat-label">Push from Scenario 1</span>
           {{ push_prompt }}
         </div>
       </div>
@@ -262,25 +257,25 @@ python3 run_demo.py scenario-b</code></pre>
         <textarea id="freeform-chat" class="chat-input" rows="3" placeholder="First turn defaults to the scripted dinner constraint message if left blank. Follow-up turns: type here (e.g. dinner cancelled, prefer later flight + lounge rest)."></textarea>
         <p class="hint chat-input-hint">Enter to send · Shift+Enter for a new line</p>
         <div class="controls-inline">
-          <button type="submit" id="btn-scenario-b" class="btn btn-primary">Run scenario-b (Concierge Chat)</button>
+          <button type="submit" id="btn-scenario-b" class="btn btn-primary">Run Scenario 2 (Concierge Chat)</button>
         </div>
       </form>
-      <p class="hint">Run scenario-a first, or scenario-b will stage options for CUST-404 automatically.</p>
+      <p class="hint">Run Scenario 1 first, or Scenario 2 will stage options for CUST-404 automatically.</p>
     </div>
     <div class="card">
       <h2>Agent Brain Log <span class="badge">Explainability</span></h2>
       <div id="brain-log" class="brain-log">
-        <p class="hint">Run scenario-b to populate the reasoning trace.</p>
+        <p class="hint">Run Scenario 2 to populate the reasoning trace.</p>
       </div>
       <h3>Concierge Response</h3>
       <div id="agent-response" class="agent-response">Waiting for agent...</div>
     </div>
   </section>
   <div class="card">
-    <h2>scenario-b Audit Log</h2>
-    <p class="hint" id="audit-hint-b">Run scenario-b to see results from this session only.</p>
+    <h2>Scenario 2 Audit Log</h2>
+    <p class="hint" id="audit-hint-b">Run Scenario 2 to see results from this session only.</p>
     <div id="audit-log-b" class="scroll-panel">
-      <p class="hint">No results yet — click Run scenario-b above.</p>
+      <p class="hint">No results yet — click Run Scenario 2 above.</p>
     </div>
   </div>
 </section>

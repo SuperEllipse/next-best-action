@@ -1,0 +1,30 @@
+# Secrets and local config
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# IDE / session
+.cursor/
+.cursor-server/
+.ipynb_checkpoints/
+.vscode/
+
+# User / runtime caches
+.cache/
+.local/
+.conda/
+.npm/
+.phoenix/
+.bash_history
+.lesshst
+
+# Build artifacts
+agent_studio_workflow/mcp_bridge/build/
+agent_studio_workflow/mcp_bridge/.venv/

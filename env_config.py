@@ -23,8 +23,9 @@ def get_env_status() -> dict:
         "env_file_found": _ENV_FILE.is_file(),
         "openai_api_key_set": bool(os.environ.get("OPENAI_API_KEY")),
         "snowflake_pat_set": bool(os.environ.get("SNOWFLAKE_PAT")),
-        "snowflake_account_url": os.environ.get("SNOWFLAKE_ACCOUNT_URL", "(default)"),
+        "snowflake_account_url": os.environ.get("SNOWFLAKE_ACCOUNT_URL") or "(not set)",
         "iceberg_jar": os.environ.get("ICEBERG_JAR", "(auto-detect)"),
+        "iceberg_warehouse_uri_set": bool(os.environ.get("ICEBERG_WAREHOUSE_URI")),
         "cdsw_app_port": os.environ.get("CDSW_APP_PORT"),
     }
 
@@ -41,3 +42,4 @@ def print_env_status() -> None:
     print(f"  SNOWFLAKE_PAT: {'set' if status['snowflake_pat_set'] else 'NOT SET'}")
     print(f"  SNOWFLAKE_ACCOUNT_URL: {status['snowflake_account_url']}")
     print(f"  ICEBERG_JAR: {status['iceberg_jar']}")
+    print(f"  ICEBERG_WAREHOUSE_URI: {'set' if status['iceberg_warehouse_uri_set'] else 'NOT SET'}")

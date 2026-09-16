@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "Snowflake IROP Profiles MCP": {
+      "command": "/home/cdsw/.local/bin/uvx",
+      "args": [
+        "--from",
+        "/home/cdsw/agent_studio_workflow/mcp_bridge",
+        "irop-snowflake-mcp-bridge"
+      ],
+      "env": {
+        "PATH": "/home/cdsw/.local/bin:/usr/local/bin:/usr/bin:/bin",
+        "HOME": "/home/cdsw",
+        "UV_LINK_MODE": "copy",
+        "UV_NO_PROGRESS": "1",
+        "SNOWFLAKE_PAT": "dummy",
+        "SNOWFLAKE_ACCOUNT_URL": "https://<your-account>.snowflakecomputing.com"
+      }
+    }
+  }
+}

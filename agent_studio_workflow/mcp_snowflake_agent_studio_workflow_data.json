@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "Snowflake IROP Profiles MCP": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "/workflow_data/agent_studio_workflow/mcp_bridge/dist/irop_snowflake_mcp_bridge-0.3.0-py3-none-any.whl",
+        "irop-snowflake-mcp-bridge"
+      ],
+      "env": {
+        "UV_CACHE_DIR": "/workspace/.uv-cache",
+        "TMPDIR": "/workspace",
+        "UV_LINK_MODE": "copy",
+        "UV_NO_PROGRESS": "1",
+        "SNOWFLAKE_PAT": "dummy",
+        "SNOWFLAKE_ACCOUNT_URL": "https://<your-account>.snowflakecomputing.com"
+      }
+    }
+  }
+}

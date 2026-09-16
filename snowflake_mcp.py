@@ -7,12 +7,15 @@ from typing import Generator, Optional
 import httpx
 from crewai_tools import MCPServerAdapter
 
-DEFAULT_ACCOUNT_URL = "https://ngnwjus-mf49199.snowflakecomputing.com"
 PROFILE_TABLE = "CUSTOMER_DB.PROFILES.PASSENGER_PROFILES"
 
 
 def get_mcp_server_url(account_url: Optional[str] = None) -> str:
-    base = account_url or os.environ.get("SNOWFLAKE_ACCOUNT_URL", DEFAULT_ACCOUNT_URL)
+    base = (account_url or os.environ.get("SNOWFLAKE_ACCOUNT_URL", "")).strip()
+    if not base:
+        raise ValueError(
+            "SNOWFLAKE_ACCOUNT_URL is not set. Copy .env.example to .env and set your account URL."
+        )
     return (
         f"{base.rstrip('/')}/api/v2/databases/CUSTOMER_DB"
         f"/schemas/PROFILES/mcp-servers/CUSTOMER_MCP_SERVER"
@@ -78,12 +81,15 @@ def fetch_passenger_profile(customer_id: str, verbose: bool = False) -> str:
         task = Task(
             description=(
                 f"Query {PROFILE_TABLE} for customer_id = '{customer_id}'. "
-                "Return loyalty tier, lifetime spend, lifetime flights, cabin class preference, "
-                "baseline retention propensity, stated preferences, and past disruption history."
+                "Select exactly these columns: CUSTOMER_ID, FULL_NAME, LOYALTY_TIER, "
+                "LIFETIME_SPEND_USD, LIFETIME_FLIGHTS, PREFERRED_SEAT, PREFERRED_LOUNGE, "
+                "PAST_DISRUPTIONS_COUNT, LAST_DISRUPTION_OUTCOME, BASE_RETENTION_PROPENSITY. "
+                "Return one line per column in the form 'column_name: value' using the exact "
+                "Snowflake column names. Do not invent fields."
             ),
             expected_output=(
-                f"A structured summary of the passenger profile for {customer_id} "
-                "including tier, spend, propensity, and preferences."
+                f"All ten columns for {customer_id}, each on its own line as "
+                "'COLUMN_NAME: value'. Use exact Snowflake column names from PASSENGER_PROFILES."
             ),
             agent=analyst,
         )

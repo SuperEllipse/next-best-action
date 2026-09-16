@@ -1,0 +1,5 @@
+customer_id,full_name,loyalty_tier,lifetime_spend_usd,lifetime_flights,preferred_seat,preferred_lounge,past_disruptions_count,last_disruption_outcome,base_retention_propensity
+CUST-101,Alexander Wright,Platinum,145000,112,1A,First Class Lounge,4,ACCEPTED_GESTURE,0.95
+CUST-202,Mei Lin Tan,Gold,42000,38,12C,Express Lounge,2,ACCEPTED_GESTURE,0.62
+CUST-303,James Okafor,Silver,18500,22,14F,,6,COMPLAINED,0.48
+CUST-404,David Vance,Platinum,420000,312,3K,"DXB Business Lounge North - Quiet Zone / work pod",3,"Negative: auto-rebooked without consultation; prefers confirmation before itinerary change",0.91

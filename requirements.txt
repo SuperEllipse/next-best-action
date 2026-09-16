@@ -1,0 +1,9 @@
+# Python 3.10+ required (tested on 3.12)
+# PySpark: use Cloudera AI Spark 3.5.4 runtime add-on — do NOT pip install pyspark
+
+crewai>=1.15.0,<2.0.0
+crewai-tools>=1.15.0,<2.0.0
+flask>=3.0.0,<4.0.0
+httpx>=0.28.0,<1.0.0
+python-dotenv>=1.0.0,<2.0.0
+overrides>=7.0.0,<8.0.0

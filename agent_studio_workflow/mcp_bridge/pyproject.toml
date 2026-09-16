@@ -1,0 +1,19 @@
+[project]
+name = "irop-snowflake-mcp-bridge"
+version = "0.3.0"
+description = "stdio MCP bridge to Snowflake-managed CUSTOMER_MCP_SERVER (streamable-http + PAT)"
+requires-python = ">=3.10"
+dependencies = [
+    "httpx>=0.27.0",
+    "mcp>=1.28.0,<2.0.0",
+]
+
+[project.scripts]
+irop-snowflake-mcp-bridge = "bridge:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["bridge"]

@@ -100,35 +100,14 @@ function parseProfileFields(profileText) {
   return fields;
 }
 
-function profileField(fields, ...keys) {
-  for (const key of keys) {
-    if (fields[key]) return fields[key];
-  }
-  return null;
-}
-
-function formatCurrencyValue(raw) {
-  if (!raw) return null;
-  const amount = Number(String(raw).replace(/[$,\s]/g, ""));
-  return Number.isFinite(amount) ? `$${amount.toLocaleString()}` : raw;
-}
-
 function renderProfileSummary(profileText) {
   const fields = parseProfileFields(profileText);
-  const spendRaw = profileField(
-    fields,
-    "LIFETIME_SPEND_USD",
-    "lifetime_spend_usd",
-    "Lifetime Spend (USD)",
-    "Lifetime Spend"
-  );
   const highlights = [
-    ["Name", profileField(fields, "FULL_NAME", "full_name", "Full Name")],
-    ["Tier", profileField(fields, "LOYALTY_TIER", "loyalty_tier", "Loyalty Tier")],
-    ["Spend", formatCurrencyValue(spendRaw)],
-    ["Lounge", profileField(fields, "PREFERRED_LOUNGE", "preferred_lounge", "Preferred Lounge")],
-    ["Propensity", profileField(fields, "BASE_RETENTION_PROPENSITY", "base_retention_propensity", "Base Retention Propensity", "Baseline Retention Propensity")],
-    ["Last outcome", profileField(fields, "LAST_DISRUPTION_OUTCOME", "last_disruption_outcome", "Last Disruption Outcome")],
+    ["Name", fields["Full Name"]],
+    ["Tier", fields["Loyalty Tier"]],
+    ["Spend", fields["Lifetime Spend (USD)"] ? `$${Number(fields["Lifetime Spend (USD)"]).toLocaleString()}` : null],
+    ["Propensity", fields["Base Retention Propensity"]],
+    ["Last outcome", fields["Last Disruption Outcome"]],
   ].filter(([, v]) => v);
 
   if (!highlights.length) {
@@ -229,14 +208,14 @@ function renderSessionAuditLog(scenario) {
   if (!log) return;
 
   const emptyMsg = isA
-    ? "No results yet — click Run scenario-a above."
-    : "No results yet — click Run scenario-b above.";
+    ? "No results yet — click Run Scenario 1 above."
+    : "No results yet — click Run Scenario 2 above.";
 
   log.innerHTML = renderAuditRows(rows, emptyMsg);
   if (hint) {
     hint.textContent = rows.length
       ? `Showing ${rows.length} record(s) from this session.`
-      : (isA ? "Run scenario-a to see results from this session only." : "Run scenario-b to see results from this session only.");
+      : (isA ? "Run Scenario 1 to see results from this session only." : "Run Scenario 2 to see results from this session only.");
   }
 }
 
@@ -252,12 +231,12 @@ function clearScenarioSession(scenario) {
     sessionState.chatHistory = [];
     const brainLog = document.getElementById("brain-log");
     const responsePanel = document.getElementById("agent-response");
-    if (brainLog) brainLog.innerHTML = "<p class='hint'>Run scenario-b to populate the reasoning trace.</p>";
+    if (brainLog) brainLog.innerHTML = "<p class='hint'>Run Scenario 2 to populate the reasoning trace.</p>";
     if (responsePanel) responsePanel.textContent = "Waiting for agent...";
     resetConciergeChatWindow();
   }
   renderSessionAuditLog(scenario);
-  setStatus(isA ? "scenario-a log cleared. Ready to rerun." : "scenario-b log cleared. Ready to rerun.");
+  setStatus(isA ? "Scenario 1 log cleared. Ready to rerun." : "Scenario 2 log cleared. Ready to rerun.");
 }
 
 async function fetchSessionResults(scenario, since) {
@@ -394,7 +373,7 @@ async function loadSegmentPanels(passengers) {
   container.innerHTML = passengers.map(renderSkeletonSegmentCard).join("");
 
   const segmentNotes = {
-    "CUST-404": "High-value, choice-oriented — scenario-a holds options; scenario-b chat executes preference.",
+    "CUST-404": "High-value, choice-oriented — Scenario 1 holds options; Scenario 2 chat executes preference.",
   };
 
   await Promise.all(passengers.map(async (cid) => {
@@ -514,7 +493,7 @@ async function runScenario2Chat(customerId, scriptedChat) {
   clearChatInput(freeform);
   appendChatBubble(chatWindow, "passenger", chatMessage);
   responsePanel.textContent = "Agent is reasoning… (3-agent CrewAI workflow)";
-  setStatus("Running scenario-b — agentic concierge for David Vance…");
+  setStatus("Running Scenario 2 — agentic concierge for David Vance…");
   showLoading();
   const runAt = new Date().toISOString().slice(0, 19).replace("T", " ");
   sessionState.scenario2RunAt = runAt;
@@ -549,7 +528,7 @@ async function runScenario2Chat(customerId, scriptedChat) {
       });
     }
     renderSessionAuditLog("PULL_CONCIERGE");
-    setStatus("scenario-b complete.");
+    setStatus("Scenario 2 complete.");
     await loadExecutiveOverview();
   } catch (err) {
     responsePanel.textContent = `Error: ${err.message}`;
@@ -596,7 +575,7 @@ async function checkEnvStatus() {
       setStatus(hint, true);
       return false;
     }
-    setStatus("Ready. Run scenario-a to populate metrics, or scenario-b for David's concierge chat.");
+    setStatus("Ready. Run Scenario 1 to populate metrics, or Scenario 2 for David's concierge chat.");
     return true;
   } catch {
     return true;
@@ -618,7 +597,7 @@ function initExecutive(passengers, customerId, scriptedChat) {
   document.getElementById("btn-scenario-a")?.addEventListener("click", async () => {
     const btn = document.getElementById("btn-scenario-a");
     btn.disabled = true;
-    setStatus("Running scenario-a — processing all passengers. This takes several minutes…");
+    setStatus("Running Scenario 1 — processing all passengers. This takes several minutes…");
     showLoading();
     const runAt = new Date().toISOString().slice(0, 19).replace("T", " ");
     sessionState.scenario1RunAt = runAt;
@@ -630,7 +609,7 @@ function initExecutive(passengers, customerId, scriptedChat) {
       }));
       sessionState.scenario1Rows = await fetchSessionResults("PUSH_NBA", runAt);
       renderSessionAuditLog("PUSH_NBA");
-      setStatus("scenario-a complete. Switch to scenario-b tab for David's concierge chat.");
+      setStatus("Scenario 1 complete. Switch to Scenario 2 tab for David's concierge chat.");
       await loadExecutiveOverview();
     } catch (err) {
       setStatus(err.message, true);

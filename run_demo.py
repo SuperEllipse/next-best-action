@@ -7,7 +7,7 @@ import sys
 
 # Ensure project root is on path and load .env before other imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from env_config import load_project_env, print_env_status
+from env_config import get_env_status, load_project_env, print_env_status
 
 load_project_env()
 
@@ -63,6 +63,14 @@ def launch_dashboard():
     from dashboard.app import get_app_server_config, run_server
 
     print_env_status()
+    status = get_env_status()
+    if not status["iceberg_warehouse_uri_set"]:
+        print(
+            "\nERROR: ICEBERG_WAREHOUSE_URI is not set. "
+            "Add your lakehouse path to .env or Application environment variables "
+            "(see .env.example)."
+        )
+        sys.exit(1)
     host, port = get_app_server_config()
     print(f"=== Launching Flask dashboard on {host}:{port} (CDSW_APP_PORT) ===")
     print("Access via the grid icon in the Cloudera AI session toolbar.")
@@ -73,8 +81,10 @@ def main():
     parser = argparse.ArgumentParser(description="IROP Agentic Demo")
     parser.add_argument(
         "command",
+        nargs="?",
+        default="dashboard",
         choices=["setup", "seed", "test-insert", "scenario-a", "scenario-b", "scenarios", "dashboard", "all"],
-        help="setup=create tables+seed, seed=seed only, test-insert=smoke test, scenario-a/b, dashboard, all",
+        help="default: dashboard. setup=create tables+seed, seed=seed only, test-insert=smoke test, scenario-a/b, all",
     )
     parser.add_argument(
         "-q",

@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "Snowflake IROP Profiles MCP": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote@latest",
+        "https://<your-account>.snowflakecomputing.com/api/v2/databases/CUSTOMER_DB/schemas/PROFILES/mcp-servers/CUSTOMER_MCP_SERVER",
+        "--transport",
+        "http-first",
+        "--header",
+        "Authorization:${SNOWFLAKE_AUTH}",
+        "--header",
+        "X-Snowflake-Authorization-Token-Type:PROGRAMMATIC_ACCESS_TOKEN",
+        "--silent"
+      ],
+      "env": {
+        "SNOWFLAKE_AUTH": "Bearer dummy",
+        "NPM_CONFIG_CACHE": "/workspace/.npm-cache",
+        "TMPDIR": "/workspace"
+      }
+    }
+  }
+}

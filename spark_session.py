@@ -10,11 +10,32 @@ from pyspark.sql import SparkSession
 ICEBERG_JAR_DEFAULT = (
     "/opt/spark/optional-lib/iceberg-spark-runtime-3.5_2.12-1.5.2.1.25.731.0-41.jar"
 )
-ADLS_FILESYSTEM = "abfs://data@go01demoazure.dfs.core.windows.net/go01-az-dl"
 ICEBERG_DATABASE = "airline_irop"
 ICEBERG_NAMESPACE = f"spark_catalog.{ICEBERG_DATABASE}"
 
 _spark = None
+
+
+def get_iceberg_warehouse_uri() -> str:
+    """Object-store URI for spark.yarn.access.hadoopFileSystems (set in .env)."""
+    from env_config import load_project_env
+
+    load_project_env()
+    uri = os.environ.get("ICEBERG_WAREHOUSE_URI", "").strip()
+    if uri:
+        return uri
+
+    # Reuse filesystem config from an existing Spark session in this JVM (e.g. after setup).
+    active = SparkSession.getActiveSession()
+    if active is not None:
+        existing = active.conf.get("spark.yarn.access.hadoopFileSystems", "").strip()
+        if existing:
+            return existing
+
+    raise ValueError(
+        "ICEBERG_WAREHOUSE_URI is not set. "
+        "Add your lakehouse path to .env (see .env.example)."
+    )
 
 
 def resolve_iceberg_jar() -> str:
@@ -54,7 +75,7 @@ def get_spark_session(app_name: str = "IROP Demo") -> SparkSession:
     _spark = (
         SparkSession.builder.appName(app_name)
         .config("spark.hadoop.fs.s3a.s3guard.ddb.region", "us-east-2")
-        .config("spark.yarn.access.hadoopFileSystems", ADLS_FILESYSTEM)
+        .config("spark.yarn.access.hadoopFileSystems", get_iceberg_warehouse_uri())
         .config("spark.jars", jar)
         .config(
             "spark.sql.extensions",
