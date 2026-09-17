@@ -5,11 +5,68 @@ import argparse
 import os
 import sys
 
+
+def _bootstrap_project_root() -> str:
+    """Resolve project root when run as a script or a Cloudera AI kernel cell."""
+    try:
+        return os.path.dirname(os.path.abspath(__file__))
+    except NameError:
+        for key in ("CDSW_PROJECT", "PROJECT_ROOT"):
+            root = os.environ.get(key, "").strip()
+            if root and os.path.isfile(os.path.join(root, "run_demo.py")):
+                return os.path.abspath(root)
+        cwd = os.getcwd()
+        if os.path.isfile(os.path.join(cwd, "run_demo.py")):
+            return cwd
+        return cwd
+
+
 # Ensure project root is on path and load .env before other imports
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+_ROOT = _bootstrap_project_root()
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+
 from env_config import get_env_status, load_project_env, print_env_status
 
 load_project_env()
+
+_VALID_COMMANDS = frozenset(
+    {"setup", "seed", "test-insert", "scenario-a", "scenario-b", "scenarios", "dashboard", "all"}
+)
+
+
+def _running_in_jupyter_kernel() -> bool:
+    """True when Cloudera AI runs a .py file via ipykernel (not a shell command)."""
+    argv0 = os.path.basename(sys.argv[0]) if sys.argv else ""
+    if "ipykernel" in argv0:
+        return True
+    if any("/jupyter/runtime/kernel-" in arg for arg in sys.argv[1:]):
+        return True
+    try:
+        get_ipython  # type: ignore[name-defined]  # noqa: F821
+        return True
+    except NameError:
+        return False
+
+
+def _cli_argv() -> list[str]:
+    """Build argv for argparse; Jupyter injects kernel connection paths into sys.argv."""
+    if _running_in_jupyter_kernel():
+        env_cmd = os.environ.get("IROP_DEMO_COMMAND", "").strip()
+        if env_cmd:
+            if env_cmd not in _VALID_COMMANDS:
+                raise SystemExit(
+                    f"Invalid IROP_DEMO_COMMAND='{env_cmd}'. "
+                    f"Choose from: {', '.join(sorted(_VALID_COMMANDS))}"
+                )
+            return [env_cmd]
+        return []
+
+    cli_args = []
+    for arg in sys.argv[1:]:
+        if arg in _VALID_COMMANDS or arg in ("-q", "--quiet"):
+            cli_args.append(arg)
+    return cli_args
 
 
 def _print_scenario_result(customer_id: str, data: dict) -> None:
@@ -92,7 +149,7 @@ def main():
         action="store_true",
         help="Suppress verbose CrewAI agent output (summary still printed)",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(_cli_argv())
     verbose = not args.quiet
 
     if args.command == "setup":

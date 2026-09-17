@@ -280,8 +280,12 @@ In your Cloudera AI project:
 | Setting | Value |
 |---------|-------|
 | **Name** | `IROP NBA Demo` (or your choice) |
-| **Command** | `python3 run_demo.py` (defaults to dashboard; `dashboard` is optional) |
-| **Runtime** | Python 3.12 with **Spark 3.5.4** add-on |
+| **Script** | `run_demo.py` |
+| **Engine / kernel** | Python 3.12 with **Spark 3.5.4** add-on |
+
+Cloudera AI Applications use the **.py file + kernel** picker (not a free-form shell command). `run_demo.py` detects ipykernel launch and defaults to the **dashboard** without parsing Jupyter’s `sys.argv`.
+
+Optional: set `IROP_DEMO_COMMAND=setup` (or `scenario-a`, etc.) in Application environment variables to run a different mode from the kernel entrypoint.
 | **Environment variables** | Same keys as `.env` (`OPENAI_API_KEY`, `SNOWFLAKE_PAT`, `SNOWFLAKE_ACCOUNT_URL`, `ICEBERG_WAREHOUSE_URI`, optional `ICEBERG_JAR`) |
 
 3. **Start** the Application and wait until the status is **Running**
@@ -374,6 +378,9 @@ python3 run_demo.py scenario-a -q # quieter CrewAI logs
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
 | `No module named 'pyspark'` | Spark add-on not enabled | Restart session with Spark **3.5.4** runtime |
+| `invalid choice: '/tmp/jupyter/runtime/kernel-....json'` | Jupyter `sys.argv` passed to argparse | Use current `run_demo.py` (kernel-safe); restart Application |
+| `NameError: name '__file__' is not defined` | Legacy kernel execution | Use current `run_demo.py`; pick `run_demo.py` + Python 3.12 kernel in Application UI |
+| `unsupported version of sqlite3` / Chroma `RuntimeError` | Old system sqlite in Application kernel | Run `pip install -r requirements.txt` (includes `pysqlite3-binary`); restart Application |
 | `ICEBERG_WAREHOUSE_URI is not set` | Missing lakehouse path | Set in `.env` (see `.env.example`) |
 | MCP init timeout (20s) | Expired/invalid PAT or wrong account URL | Rotate PAT; check `SNOWFLAKE_ACCOUNT_URL` |
 | `Programmatic access token is expired` | PAT TTL elapsed | Generate new PAT in Snowflake |

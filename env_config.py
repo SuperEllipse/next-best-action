@@ -1,11 +1,31 @@
 """Load project .env so API keys and Iceberg settings are available everywhere."""
 
+import sqlite_bootstrap  # noqa: F401 — patch sqlite3 before CrewAI/Chroma imports
+
 import os
 from pathlib import Path
 
 from dotenv import load_dotenv
 
-_PROJECT_ROOT = Path(__file__).resolve().parent
+
+def get_project_root() -> Path:
+    """Project root for CLI, Flask app, and Cloudera AI Application kernels."""
+    try:
+        return Path(__file__).resolve().parent
+    except NameError:
+        for key in ("CDSW_PROJECT", "PROJECT_ROOT"):
+            root = os.environ.get(key, "").strip()
+            if root:
+                candidate = Path(root).expanduser().resolve()
+                if (candidate / "env_config.py").is_file():
+                    return candidate
+        cwd = Path.cwd()
+        if (cwd / "env_config.py").is_file():
+            return cwd
+        return cwd
+
+
+_PROJECT_ROOT = get_project_root()
 _ENV_FILE = _PROJECT_ROOT / ".env"
 
 

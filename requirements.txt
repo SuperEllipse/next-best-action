@@ -7,3 +7,4 @@ flask>=3.0.0,<4.0.0
 httpx>=0.28.0,<1.0.0
 python-dotenv>=1.0.0,<2.0.0
 overrides>=7.0.0,<8.0.0
+pysqlite3-binary>=0.5.0,<0.6.0
